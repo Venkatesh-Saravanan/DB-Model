@@ -1,4 +1,3 @@
-Purpose:
 This file outlines the database model designed for the Guvi Zen class application. It provides a clear understanding of the entities, attributes, and 
 relationships involved in the model.
 
