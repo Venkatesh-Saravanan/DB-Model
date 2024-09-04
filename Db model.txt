@@ -1,0 +1,311 @@
+Guvi Zen Class Database Design Documentation
+
+1. Introduction
+
+1.1 Purpose
+
+The purpose of this document is to provide a detailed design of the database structure for the Guvi Zen Class 
+platform. It outlines the entities, relationships, attributes, and constraints required to manage users, courses, 
+enrollments, assignments, assessments, and more.
+
+1.2 Scope
+
+This document covers the database model design for the entire Guvi Zen Class platform, which includes:
+
+User management
+Course management
+Enrollment tracking
+Assignments and submissions
+Assessments and results
+
+1.3 Audience
+
+This document is intended for database administrators, developers, and system architects involved in the 
+development and maintenance of the Guvi Zen Class platform.
+
+2. Entity-Relationship Diagram (ERD)
+The ERD visually represents the entities, attributes, and relationships within the Guvi Zen Class platform's 
+database. The diagram will include:
+
+Entities: Represented as rectangles.
+Relationships: Represented as lines connecting entities, with cardinality indicators (1:1, 1
+, M
+).
+Attributes: Represented inside the rectangles, indicating the fields of each entity.
+
+
+3. Entity Descriptions
+
+3.1 User
+
+Description: This entity stores information about all users on the platform, including students, instructors, and 
+administrators.
+
+Attributes:
+
+UserID: int, Primary Key, Auto-increment
+Name: varchar(255), Not Null
+Email: varchar(255), Not Null, Unique
+Password: varchar(255), Not Null
+Role: enum('Student', 'Instructor', 'Admin'), Not Null
+ProfilePicture: varchar(255), Nullable
+DateJoined: datetime, Not Null, Default: CURRENT_TIMESTAMP
+ContactNumber: varchar(15), Nullable
+
+3.2 Course
+
+Description: Represents the courses available on the platform, created by instructors.
+
+Attributes:
+
+CourseID: int, Primary Key, Auto-increment
+CourseName: varchar(255), Not Null
+Description: text, Nullable
+Duration: int, Not Null (in hours)
+StartDate: date, Not Null
+EndDate: date, Not Null
+InstructorID: int, Foreign Key references User(UserID), Not Null
+Category: varchar(100), Not Null
+Level: enum('Beginner', 'Intermediate', 'Advanced'), Not Null
+Thumbnail: varchar(255), Nullable
+
+3.3 Module
+
+Description: Represents individual modules within a course, each containing multiple lessons.
+
+Attributes:
+
+ModuleID: int, Primary Key, Auto-increment
+ModuleName: varchar(255), Not Null
+Description: text, Nullable
+CourseID: int, Foreign Key references Course(CourseID), Not Null
+Order: int, Not Null
+
+3.4 Lesson
+
+Description: Represents lessons within a module, including video or text content.
+
+Attributes:
+
+LessonID: int, Primary Key, Auto-increment
+LessonTitle: varchar(255), Not Null
+Content: text, Not Null
+ModuleID: int, Foreign Key references Module(ModuleID), Not Null
+Duration: int, Not Null (in minutes)
+Resources: text, Nullable
+
+3.5 Assignment
+
+Description: Represents assignments associated with a course.
+
+Attributes:
+
+AssignmentID: int, Primary Key, Auto-increment
+AssignmentTitle: varchar(255), Not Null
+Description: text, Nullable
+CourseID: int, Foreign Key references Course(CourseID), Not Null
+DueDate: datetime, Not Null
+MaxMarks: int, Not Null
+
+3.6 AssignmentSubmission
+
+Description: Stores submissions for assignments made by students.
+
+Attributes:
+
+SubmissionID: int, Primary Key, Auto-increment
+AssignmentID: int, Foreign Key references Assignment(AssignmentID), Not Null
+UserID: int, Foreign Key references User(UserID), Not Null
+SubmissionDate: datetime, Not Null, Default: CURRENT_TIMESTAMP
+MarksObtained: int, Nullable
+Feedback: text, Nullable
+FileURL: varchar(255), Nullable
+
+3.7 Assessment
+
+Description: Represents assessments (exams, quizzes) associated with a course.
+
+Attributes:
+
+AssessmentID: int, Primary Key, Auto-increment
+AssessmentTitle: varchar(255), Not Null
+CourseID: int, Foreign Key references Course(CourseID), Not Null
+TotalMarks: int, Not Null
+PassingMarks: int, Not Null
+Date: datetime, Not Null
+
+3.8 AssessmentResult
+
+Description: Stores results for assessments taken by students.
+
+Attributes:
+
+ResultID: int, Primary Key, Auto-increment
+AssessmentID: int, Foreign Key references Assessment(AssessmentID), Not Null
+UserID: int, Foreign Key references User(UserID), Not Null
+MarksObtained: int, Not Null
+Grade: varchar(2), Nullable
+
+3.9 Enrollment
+
+Description: Tracks enrollments of users in courses.
+
+Attributes:
+
+EnrollmentID: int, Primary Key, Auto-increment
+UserID: int, Foreign Key references User(UserID), Not Null
+CourseID: int, Foreign Key references Course(CourseID), Not Null
+EnrollmentDate: datetime, Not Null, Default: CURRENT_TIMESTAMP
+Progress: decimal(5,2), Not Null, Default: 0.00 (Percentage)
+
+4. Relationships and Constraints
+
+4.1 One-to-Many Relationships
+
+User -> Enrollment: A user can enroll in many courses.
+Course -> Enrollment: A course can have many enrollments.
+Course -> Module: A course can have many modules.
+Module -> Lesson: A module can have many lessons.
+Course -> Assignment: A course can have many assignments.
+Assignment -> AssignmentSubmission: An assignment can have many submissions.
+Course -> Assessment: A course can have many assessments.
+Assessment -> AssessmentResult: An assessment can have many results.
+User -> AssignmentSubmission: A user (student) can submit many assignments.
+User -> AssessmentResult: A user (student) can have many assessment results.
+
+4.2 Constraints
+
+Primary Key Constraints: Ensures the uniqueness of entities (e.g., UserID, CourseID).
+Foreign Key Constraints: Enforces referential integrity between entities (e.g., InstructorID in Course references 
+UserID).
+Unique Constraints: Ensures attributes like Email are unique across users.
+Not Null Constraints: Prevents missing data for critical attributes (e.g., CourseName, StartDate).
+
+5. Database Schema
+
+5.1 Schema Definition
+
+Here’s a sample SQL script for creating the schema based on the above model:
+
+CREATE TABLE User (
+    UserID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    Password VARCHAR(255) NOT NULL,
+    Role ENUM('Student', 'Instructor', 'Admin') NOT NULL,
+    ProfilePicture VARCHAR(255),
+    DateJoined DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ContactNumber VARCHAR(15)
+);
+
+CREATE TABLE Course (
+    CourseID INT PRIMARY KEY AUTO_INCREMENT,
+    CourseName VARCHAR(255) NOT NULL,
+    Description TEXT,
+    Duration INT NOT NULL,
+    StartDate DATE NOT NULL,
+    EndDate DATE NOT NULL,
+    InstructorID INT NOT NULL,
+    Category VARCHAR(100) NOT NULL,
+    Level ENUM('Beginner', 'Intermediate', 'Advanced') NOT NULL,
+    Thumbnail VARCHAR(255),
+    FOREIGN KEY (InstructorID) REFERENCES User(UserID)
+);
+
+CREATE TABLE Module (
+    ModuleID INT PRIMARY KEY AUTO_INCREMENT,
+    ModuleName VARCHAR(255) NOT NULL,
+    Description TEXT,
+    CourseID INT NOT NULL,
+    `Order` INT NOT NULL,
+    FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+);
+
+CREATE TABLE Lesson (
+    LessonID INT PRIMARY KEY AUTO_INCREMENT,
+    LessonTitle VARCHAR(255) NOT NULL,
+    Content TEXT NOT NULL,
+    ModuleID INT NOT NULL,
+    Duration INT NOT NULL,
+    Resources TEXT,
+    FOREIGN KEY (ModuleID) REFERENCES Module(ModuleID)
+);
+
+CREATE TABLE Assignment (
+    AssignmentID INT PRIMARY KEY AUTO_INCREMENT,
+    AssignmentTitle VARCHAR(255) NOT NULL,
+    Description TEXT,
+    CourseID INT NOT NULL,
+    DueDate DATETIME NOT NULL,
+    MaxMarks INT NOT NULL,
+    FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+);
+
+CREATE TABLE AssignmentSubmission (
+    SubmissionID INT PRIMARY KEY AUTO_INCREMENT,
+    AssignmentID INT NOT NULL,
+    UserID INT NOT NULL,
+    SubmissionDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    MarksObtained INT,
+    Feedback TEXT,
+    FileURL VARCHAR(255),
+    FOREIGN KEY (AssignmentID) REFERENCES Assignment(AssignmentID),
+    FOREIGN KEY (UserID) REFERENCES User(UserID)
+);
+
+CREATE TABLE Assessment (
+    AssessmentID INT PRIMARY KEY AUTO_INCREMENT,
+    AssessmentTitle VARCHAR(255) NOT NULL,
+    CourseID INT NOT NULL,
+    TotalMarks INT NOT NULL,
+    PassingMarks INT NOT NULL,
+    `Date` DATETIME NOT NULL,
+    FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+);
+
+CREATE TABLE AssessmentResult (
+    ResultID INT PRIMARY KEY AUTO_INCREMENT,
+    AssessmentID INT NOT NULL,
+    UserID INT NOT NULL,
+    MarksObtained INT NOT NULL,
+    Grade VARCHAR(2),
+    FOREIGN KEY (AssessmentID) REFERENCES Assessment(AssessmentID),
+    FOREIGN KEY (UserID) REFERENCES User(UserID)
+);
+
+CREATE TABLE Enrollment (
+    EnrollmentID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    CourseID INT NOT NULL,
+    EnrollmentDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    Progress DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    FOREIGN KEY (UserID) REFERENCES User(UserID),
+    FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+);
+
+6. Future Considerations
+
+6.1 Scalability
+
+Partitioning: Implement table partitioning for large tables like User and Enrollment to improve query performance.
+Indexing: Add indexes on frequently queried fields such as Email, CourseName, and foreign keys.
+Sharding: Consider sharding the database if the platform scales significantly in user count and data volume.
+
+6.2 Data Integrity and Security
+
+Backup Strategy: Implement regular backups and disaster recovery plans.
+Data Encryption: Encrypt sensitive data such as passwords (using bcrypt or another hashing algorithm) and personal
+information.
+Role-based Access Control (RBAC): Ensure that the application enforces RBAC at the database level for critical 
+operations.
+
+6.3 Performance Optimization
+
+Caching: Implement caching mechanisms for frequently accessed data such as course lists and user profiles.
+Query Optimization: Regularly analyze and optimize slow queries to improve performance.
+
+7. Conclusion
+
+This document outlines the database design for the Guvi Zen Class platform, providing a structured approach to 
+managing users, courses, assignments, and assessments. The design ensures data integrity, scalability, and
+ performance, meeting the needs of the platform as it grows.
